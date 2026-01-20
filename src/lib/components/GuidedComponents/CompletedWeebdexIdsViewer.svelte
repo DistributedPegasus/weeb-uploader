@@ -21,12 +21,22 @@
 		Array<{ entry: CompletedIdEntry; isRestored: boolean; inSpreadsheet: boolean }>
 	>([]);
 	let isLoadingRestoredStatus = $state(false);
+	let showSheetSettings = $state(false);
+	let sheetUrlInput = $state('');
+	let isLoadingSheet = $state(false);
 
 	const completedIdsState = getContext<CompletedIdsState>(completedIdsStateContext);
 
 	const sessions = $derived(completedIdsState.sessions);
 	const allCombinedIds = $derived(completedIdsState.allCombinedIds);
 	const restoredIdsState = RESTORED_IDS_STATE;
+
+	// Initialize sheet URL input with current value
+	$effect(() => {
+		if (showSheetSettings) {
+			sheetUrlInput = restoredIdsState.sheetUrl;
+		}
+	});
 
 	// Update restored status when entries change
 	$effect(() => {
@@ -231,6 +241,38 @@
 		}
 		return 'Select a session';
 	}
+
+	async function saveSheetUrl() {
+		isLoadingSheet = true;
+		try {
+			restoredIdsState.setSheetUrl(sheetUrlInput);
+			await restoredIdsState.reload();
+			showSheetSettings = false;
+		} catch (error) {
+			console.error('Failed to load sheet:', error);
+		} finally {
+			isLoadingSheet = false;
+		}
+	}
+
+	function previewNormalizedUrl(url: string): string | null {
+		if (!url.trim()) {
+			return null;
+		}
+
+		const sheetsRegex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/;
+		const match = url.match(sheetsRegex);
+
+		if (!match) {
+			return null;
+		}
+
+		const sheetId = match[1];
+		const gidMatch = url.match(/[#&]gid=(\d+)/);
+		const gid = gidMatch ? gidMatch[1] : '0';
+
+		return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+	}
 </script>
 
 <div class="flex flex-col gap-4 bg-surface rounded-md p-4">
@@ -252,6 +294,75 @@
 	</button>
 
 	{#if isExpanded}
+		<!-- Sheet Settings Section -->
+		<div class="flex flex-col gap-2">
+			<button
+				type="button"
+				class="btn-base btn-neutral px-3 py-1 text-sm w-full"
+				onclick={() => {
+					showSheetSettings = !showSheetSettings;
+				}}
+			>
+				{showSheetSettings ? 'Hide Sheet Settings' : 'Configure Sheet URL'}
+			</button>
+
+			{#if showSheetSettings}
+				<div class="flex flex-col gap-2 bg-surface border border-surface rounded-md p-3">
+					<label for="sheet-url" class="text-sm font-medium text-app">
+						Restored IDs Sheet URL:
+					</label>
+					<p class="text-xs text-muted">
+						Paste a Google Sheets URL here. It will be automatically converted to CSV format for
+						loading. The sheet must be publicly accessible or shared with "Anyone with the link".
+					</p>
+					<input
+						id="sheet-url"
+						type="text"
+						bind:value={sheetUrlInput}
+						placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=0"
+						class="bg-surface border border-surface rounded-md px-3 py-2 text-sm text-app"
+						disabled={isLoadingSheet}
+					/>
+					{#if previewNormalizedUrl(sheetUrlInput)}
+						<div class="text-xs text-muted bg-surface-hover rounded-md p-2">
+							<div class="font-medium mb-1">Will fetch from:</div>
+							<div class="font-mono break-all">{previewNormalizedUrl(sheetUrlInput)}</div>
+						</div>
+					{/if}
+					<div class="flex flex-row gap-2">
+						<button
+							type="button"
+							class="btn-base btn-primary px-3 py-1 text-sm"
+							onclick={saveSheetUrl}
+							disabled={isLoadingSheet}
+						>
+							{isLoadingSheet ? 'Loading...' : 'Save & Load Sheet'}
+						</button>
+						<button
+							type="button"
+							class="btn-base btn-neutral px-3 py-1 text-sm"
+							onclick={() => {
+								showSheetSettings = false;
+							}}
+							disabled={isLoadingSheet}
+						>
+							Cancel
+						</button>
+					</div>
+					{#if restoredIdsState.loadError}
+						<div class="text-sm text-red-400">
+							Error: {restoredIdsState.loadError.message}
+						</div>
+					{/if}
+					{#if restoredIdsState.sheetUrl}
+						<div class="text-xs text-muted">
+							Current URL: {restoredIdsState.sheetUrl}
+						</div>
+					{/if}
+				</div>
+			{/if}
+		</div>
+
 		<div class="flex flex-row gap-2 items-center">
 			<label for="view-mode" class="text-sm text-muted">View Mode:</label>
 			<button

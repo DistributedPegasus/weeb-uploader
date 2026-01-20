@@ -1,7 +1,7 @@
 import { parse } from 'csv-parse/browser/esm/sync';
 import { SvelteMap } from 'svelte/reactivity';
 
-const RESTORED_CSV_URL = '';
+const SHEET_URL_STORAGE_KEY = 'restored-ids-sheet-url';
 
 export interface RestoredIdEntry {
 	mangadexId: string;
@@ -18,10 +18,102 @@ export class RestoredIdsState {
 	public isLoading = $state<boolean>(false);
 	public loadError = $state<Error | null>(null);
 	private loadPromise: Promise<void> | null = null;
+	private _sheetUrl = $state<string>('');
 
 	constructor() {
+		// Load sheet URL from localStorage
+		this._sheetUrl = this.getSheetUrlFromStorage();
 		// Auto-load on construction
 		this.load();
+	}
+
+	/**
+	 * Get the current sheet URL
+	 */
+	get sheetUrl(): string {
+		return this._sheetUrl;
+	}
+
+	/**
+	 * Set the sheet URL and save to localStorage
+	 */
+	setSheetUrl(url: string): void {
+		this._sheetUrl = url.trim();
+		this.saveSheetUrlToStorage(this._sheetUrl);
+	}
+
+	/**
+	 * Normalize a Google Sheets URL to CSV export format
+	 * Converts: https://docs.google.com/spreadsheets/d/SHEET_ID/edit#gid=123
+	 * To: https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=123
+	 */
+	private normalizeSheetUrl(url: string): string {
+		if (!url) {
+			return url;
+		}
+
+		// Check if it's a Google Sheets URL
+		const sheetsRegex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/;
+		const match = url.match(sheetsRegex);
+
+		if (!match) {
+			// Not a Google Sheets URL, return as-is
+			return url;
+		}
+
+		const sheetId = match[1];
+
+		// Extract gid if present (specific sheet within the spreadsheet)
+		const gidMatch = url.match(/[#&]gid=(\d+)/);
+		const gid = gidMatch ? gidMatch[1] : '0';
+
+		// Construct the CSV export URL
+		return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+	}
+
+	/**
+	 * Load sheet URL from localStorage
+	 */
+	private getSheetUrlFromStorage(): string {
+		if (typeof localStorage === 'undefined') {
+			return '';
+		}
+		try {
+			return localStorage.getItem(SHEET_URL_STORAGE_KEY) || '';
+		} catch (error) {
+			console.error('Failed to load sheet URL from localStorage:', error);
+			return '';
+		}
+	}
+
+	/**
+	 * Save sheet URL to localStorage
+	 */
+	private saveSheetUrlToStorage(url: string): void {
+		if (typeof localStorage === 'undefined') {
+			return;
+		}
+		try {
+			if (url) {
+				localStorage.setItem(SHEET_URL_STORAGE_KEY, url);
+			} else {
+				localStorage.removeItem(SHEET_URL_STORAGE_KEY);
+			}
+		} catch (error) {
+			console.error('Failed to save sheet URL to localStorage:', error);
+		}
+	}
+
+	/**
+	 * Reload data from the sheet URL (forces a fresh load)
+	 */
+	async reload(): Promise<void> {
+		this._data = null;
+		this._legacyIdMap = null;
+		this._allRestoredWeebdexIds = [];
+		this._allRestoredLegacyIds = [];
+		this.loadPromise = null;
+		await this.load();
 	}
 
 	public get allRestoredWeebdexIds(): string[] {
@@ -52,15 +144,23 @@ export class RestoredIdsState {
 		});
 
 		try {
-			//const response = await fetch(RESTORED_CSV_URL);
-			//if (!response.ok) {
+			// If no sheet URL is configured, initialize with empty data
+			if (!this._sheetUrl) {
 				this._data = new SvelteMap<string, RestoredIdEntry>();
 				this._legacyIdMap = new SvelteMap<string, RestoredIdEntry>();
 				this._allRestoredWeebdexIds = [];
 				this._allRestoredLegacyIds = [];
 				resolvePromise!();
 				return;
-			//}
+			}
+
+			// Normalize the URL to CSV export format
+			const csvUrl = this.normalizeSheetUrl(this._sheetUrl);
+
+			const response = await fetch(csvUrl);
+			if (!response.ok) {
+				throw new Error(`Failed to fetch sheet: ${response.status} ${response.statusText}`);
+			}
 
 			const csvText = await response.text();
 			const { data, legacyIdMap, restoredWeebdexIds, restoredLegacyIds } = this.parseCSV(csvText);
@@ -72,6 +172,10 @@ export class RestoredIdsState {
 		} catch (error) {
 			this.loadError =
 				error instanceof Error ? error : new Error('Unknown error loading restored IDs CSV');
+			this._data = new SvelteMap<string, RestoredIdEntry>();
+			this._legacyIdMap = new SvelteMap<string, RestoredIdEntry>();
+			this._allRestoredWeebdexIds = [];
+			this._allRestoredLegacyIds = [];
 			rejectPromise!(this.loadError);
 		} finally {
 			this.isLoading = false;
