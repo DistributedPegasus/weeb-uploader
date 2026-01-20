@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<link href="/weeb-uploader/_app/immutable/assets/unocss-svelte-scoped-global.DLlRjLWW.css" rel="stylesheet" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+		<script>
+			// Apply theme immediately to prevent FOUC
+			(function () {
+				const stored = localStorage.getItem('weebdex-theme');
+				let shouldBeDark = false;
+
+				if (stored === 'dark') {
+					shouldBeDark = true;
+				} else if (stored === 'light') {
+					shouldBeDark = false;
+				} else {
+					// system preference
+					shouldBeDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				}
+
+				if (shouldBeDark) {
+					document.documentElement.classList.add('dark');
+				}
+			})();
+		</script>
+
+		
+		<link href="./_app/immutable/assets/0.D42PSgDH.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/ThemeToggle.BB3_2j8v.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/UploaderOrchestrator.DFmK0HSU.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/RangeProvider.BE38su7O.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/2.BGbREi7a.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.h3Zz2SRk.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/6d9TIk4-.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/DISrue0C.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/n3ELWEVK.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/DG6bnxrc.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app._a7LRxmV.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/DHKgQpv7.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BWz26xft.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CEbVEvWq.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/DqJZiQ1o.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CTS7xzbh.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CepRIdbm.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.BtiZUgQU.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BGVVnDP_.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/eICFcUV5.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CEv-pqVm.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.eFoEpIQX.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/DQEw4H9t.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CsFz_V2l.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BVJds55N.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/Catd4PkR.js"><!--12qhfyh--><link rel="icon" href="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20width='107'%20height='128'%20viewBox='0%200%20107%20128'%3e%3ctitle%3esvelte-logo%3c/title%3e%3cpath%20d='M94.157%2022.819c-10.4-14.885-30.94-19.297-45.792-9.835L22.282%2029.608A29.92%2029.92%200%200%200%208.764%2049.65a31.5%2031.5%200%200%200%203.108%2020.231%2030%2030%200%200%200-4.477%2011.183%2031.9%2031.9%200%200%200%205.448%2024.116c10.402%2014.887%2030.942%2019.297%2045.791%209.835l26.083-16.624A29.92%2029.92%200%200%200%2098.235%2078.35a31.53%2031.53%200%200%200-3.105-20.232%2030%2030%200%200%200%204.474-11.182%2031.88%2031.88%200%200%200-5.447-24.116'%20style='fill:%23ff3e00'/%3e%3cpath%20d='M45.817%20106.582a20.72%2020.72%200%200%201-22.237-8.243%2019.17%2019.17%200%200%201-3.277-14.503%2018%2018%200%200%201%20.624-2.435l.49-1.498%201.337.981a33.6%2033.6%200%200%200%2010.203%205.098l.97.294-.09.968a5.85%205.85%200%200%200%201.052%203.878%206.24%206.24%200%200%200%206.695%202.485%205.8%205.8%200%200%200%201.603-.704L69.27%2076.28a5.43%205.43%200%200%200%202.45-3.631%205.8%205.8%200%200%200-.987-4.371%206.24%206.24%200%200%200-6.698-2.487%205.7%205.7%200%200%200-1.6.704l-9.953%206.345a19%2019%200%200%201-5.296%202.326%2020.72%2020.72%200%200%201-22.237-8.243%2019.17%2019.17%200%200%201-3.277-14.502%2017.99%2017.99%200%200%201%208.13-12.052l26.081-16.623a19%2019%200%200%201%205.3-2.329%2020.72%2020.72%200%200%201%2022.237%208.243%2019.17%2019.17%200%200%201%203.277%2014.503%2018%2018%200%200%201-.624%202.435l-.49%201.498-1.337-.98a33.6%2033.6%200%200%200-10.203-5.1l-.97-.294.09-.968a5.86%205.86%200%200%200-1.052-3.878%206.24%206.24%200%200%200-6.696-2.485%205.8%205.8%200%200%200-1.602.704L37.73%2051.72a5.42%205.42%200%200%200-2.449%203.63%205.79%205.79%200%200%200%20.986%204.372%206.24%206.24%200%200%200%206.698%202.486%205.8%205.8%200%200%200%201.602-.704l9.952-6.342a19%2019%200%200%201%205.295-2.328%2020.72%2020.72%200%200%201%2022.237%208.242%2019.17%2019.17%200%200%201%203.277%2014.503%2018%2018%200%200%201-8.13%2012.053l-26.081%2016.622a19%2019%200%200%201-5.3%202.328'%20style='fill:%23fff'/%3e%3c/svg%3e"/><!----><title>Weeb Uploader</title>
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents"><!--[--><!--[--><!----><div class="uno-csd90z"><!----><div class="uno-r204ub"><div class="uno-kd0tpq"><h1 class="uno-oq6hfo">Uploader Improved</h1> <div class="uno-b6vj60"><button type="button" class="uno-affps4">Guided Mode</button> <button type="button" class="uno-affps4">Chapter Editor</button> <button type="button" class="uno-nxs50t" aria-label="Switch to dark mode" title="Switch to dark mode"><!--[!--><div class="uno-17wp8f"></div><!--]--></button><!----></div></div> <a href="./docs" target="_blank" class="uno-io1u0r">Tutorial &amp; Docs</a> <!--[--><div class="uno-k9mq5k"><h2 class="uno-pol42v">API Authentication</h2> <!--[!--><p class="uno-4va6wa">Enter your client ID and secret to validate your access to the WeebDex API.</p> <a href="./docs#api-token-where" class="uno-6gsfuc">If you're having trouble, click here for the relevant tutorial &amp; docs section (opens in new
+			tab). <span class="uno-y4k52q"></span></a> <div class="uno-yjitzg"><div class="uno-bw7us0"><label for="client-id-input" class="uno-4va6wa">Client ID:</label> <input id="client-id-input" type="text" value="" placeholder="Enter your client ID" class="uno-p6q3um"/></div> <div class="uno-bw7us0"><label for="client-secret-input" class="uno-4va6wa">Client Secret:</label> <input id="client-secret-input" type="password" value="" placeholder="Enter your client secret" class="uno-p6q3um"/></div> <a href="https://weebdex.org/settings/client" target="_blank" class="uno-u60vko">Create a new client ID and secret (you need to be logged in to Weebdex) <span class="uno-vdh3h5"></span></a></div> <button class="uno-agpg8z" type="button">Validate API Access</button> <!--[!--><!--]--> <!--[!--><!--]--><!--]--></div><!--]--> <div class="uno-l3b4kf"><button type="button" class="uno-mpkkic uno-djdziu">Pick Folder</button> <div class="uno-57hmfs"></div> <button type="button" class="uno-mpkkic uno-ywbfsm" disabled>Select Folders</button> <div class="uno-57hmfs"></div> <button type="button" class="uno-mpkkic uno-ywbfsm" disabled>Edit Chapters</button> <div class="uno-57hmfs"></div> <button type="button" class="uno-mpkkic uno-ywbfsm" disabled>Upload</button> <div class="uno-57hmfs"></div> <button type="button" class="uno-mpkkic uno-ywbfsm" disabled>Finished</button></div> <!--[--><div class="uno-h4fy2t"><div class="uno-nai2zd"><input id="enable-transform" type="checkbox" class="uno-3hyifg"/> <label for="enable-transform" class="uno-3hyifg">Auto Image Resolution Transform (will split images higher than 10000px in height into smaller
+			chunks - 5000px)</label></div> <button class="uno-gob8cp uno-r3xq7g"><h1 class="uno-21tubf">Folder Selector</h1> <input class="uno-rcrjh3" type="file" webkitdirectory multiple/></button> <!--[!--><!--]--> <!--[!--><!--]--> <div class="uno-7vabca"><p class="uno-f0fc7y"><b>Folder Structure:</b> Select a folder containing your chapters. Each chapter should be in
+			its own folder. This is also the only real hard requirement regarding folder structure. <br/> The folder structure you select will be preserved - chapters will be identified by their folder
+			paths. There is additional selecting you can do in the step after folder selection that can narrow
+			down on what exactly you want to upload (like selecting a specific depth of folders). <br/> <br/> <b>Supported Formats:</b> <br/> • <b>Image files:</b> JPG, JPEG, PNG, GIF <br/> • <b>Archive files:</b> CBZ, ZIP (will be automatically extracted under the same name as a
+			fake folder - e.g. "chapter1.cbz" will be extracted to "chapter1") <br/> <br/> <b>Archive Processing:</b> When you select .cbz or .zip files, they will be automatically
+			extracted. The internal folder structure within archives is preserved, so you can organize
+			chapters inside archives as well. <br/> <br/> <b>File Validation:</b> All image files are validated to ensure their file extension matches
+			their actual file type. Files with mismatched extensions (e.g., a PNG file named .jpg) will be
+			flagged and must be corrected before proceeding. <br/> <br/> <b>Image Transformation (Optional):</b> Enable the checkbox above to automatically split
+			images that are taller than 10,000px into smaller chunks. <b>Only use this option if you're uploading long strip chapters.</b></p></div></div><!--]--></div><!----><!----></div><!----><!--]--> <!--[!--><!--]--><!--]-->
+			
+			<script>
+				{
+					__sveltekit_10c37x6 = {
+						base: new URL(".", location).pathname.slice(0, -1),
+						assets: "/weeb-uploader"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("./_app/immutable/entry/start.h3Zz2SRk.js"),
+						import("./_app/immutable/entry/app._a7LRxmV.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 2],
+							data: [null,null],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>
