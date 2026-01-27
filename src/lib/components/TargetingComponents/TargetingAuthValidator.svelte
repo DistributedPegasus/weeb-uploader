@@ -27,7 +27,7 @@
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
-			const storedToken = sessionStorage.getItem(STORAGE_KEY);
+			const storedToken = localStorage.getItem(STORAGE_KEY);
 			if (storedToken) {
 				authContext.apiToken = storedToken;
 				// Parse stored token to populate input fields if it's in clientId:clientSecret format
@@ -57,9 +57,9 @@
 		authContext.apiToken = token;
 		if (typeof window !== 'undefined') {
 			if (token) {
-				sessionStorage.setItem(STORAGE_KEY, token);
+				localStorage.setItem(STORAGE_KEY, token);
 			} else {
-				sessionStorage.removeItem(STORAGE_KEY);
+				localStorage.removeItem(STORAGE_KEY);
 			}
 		}
 	}
