@@ -49,7 +49,7 @@
 	</div>
 
 	<div class="flex flex-col gap-2 max-h-150 overflow-y-auto">
-		{#each filteredChapters as chapter, index}
+		{#each filteredChapters as chapter, index (chapter.id)}
 			<ChapterEditorItem {index} {chapter} {editorState} {availableGroups} />
 		{/each}
 	</div>

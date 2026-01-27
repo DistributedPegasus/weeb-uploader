@@ -195,10 +195,7 @@ export class ChapterEditorState {
 		}
 
 		return this.chapters.filter((chapter) => {
-			const currentLanguage =
-				chapter.modified.language !== undefined
-					? chapter.modified.language
-					: chapter.original.language;
+			const currentLanguage = chapter.modified.language ?? chapter.original.language;
 			return currentLanguage === this.selectedLanguageFilter;
 		});
 	}
