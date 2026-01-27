@@ -4,6 +4,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { GlobalState, globalStateContext } from '$lib/core/GlobalState.svelte';
 	import { getThemeStore } from '$lib/core/theme.svelte';
+	import OfficialCopyWarning from '$lib/components/Common/OfficialCopyWarning.svelte';
 
 	let { children } = $props();
 
@@ -23,5 +24,6 @@
 </svelte:head>
 
 <div class="bg-app text-app min-h-screen">
+	<OfficialCopyWarning />
 	{@render children()}
 </div>
