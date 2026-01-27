@@ -136,8 +136,8 @@ export class ChapterEditorState {
 
 		return {
 			chapter: modified.chapter ?? original.chapter,
-			volume: modified.volume !== undefined ? modified.volume : original.volume,
-			title: modified.title !== undefined ? modified.title : original.title,
+			volume: (modified.volume !== undefined ? modified.volume : original.volume) ?? '',
+			title: (modified.title !== undefined ? modified.title : original.title) ?? '',
 			language: modified.language ?? original.language,
 			version: original.version,
 			groups: modified.groups !== undefined ? modified.groups : defaultGroupIds
