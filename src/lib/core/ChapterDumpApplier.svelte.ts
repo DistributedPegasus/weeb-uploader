@@ -38,6 +38,10 @@ export interface ChapterInput {
 	 * Note: For titles, null and empty string are treated as equal (both represent "no title").
 	 */
 	currentTitle: string | null;
+	/**
+	 * Language of the chapter (required for exact language matching)
+	 */
+	language: string;
 }
 
 export interface ReleaseMatchResult {
@@ -264,6 +268,7 @@ export const ReleaseLookup = {
 	 * @param seriesId - The series ID
 	 * @param volume - The volume number (can be null)
 	 * @param chapter - The chapter number (can be null)
+	 * @param language - The language to match (required)
 	 * @param groupNames - Optional array of group names to filter by
 	 * @returns The resolved chapter info, or null if not found
 	 */
@@ -271,6 +276,7 @@ export const ReleaseLookup = {
 		seriesId: string,
 		volume: string | null,
 		chapter: string | null,
+		language: string,
 		groupNames: string[] = []
 	): Promise<ResolvedChapterInfo | null> {
 		if (groupNames.length > 0) {
@@ -278,10 +284,16 @@ export const ReleaseLookup = {
 				seriesId,
 				volume,
 				chapter,
-				groupNames
+				groupNames,
+				language
 			);
 		} else {
-			return await CHAPTER_TITLE_EXPORT_RESOLVER.getChapterInfo(seriesId, volume, chapter);
+			return await CHAPTER_TITLE_EXPORT_RESOLVER.getChapterInfo(
+				seriesId,
+				volume,
+				chapter,
+				language
+			);
 		}
 	},
 
@@ -309,15 +321,17 @@ export const ReleaseLookup = {
 			seriesId,
 			volume: chapter.chapterVolume,
 			chapter: chapter.chapterNumber,
+			language: chapter.language,
 			groupNames,
 			useFallbackMatching
 		});
 
-		// Try exact match first (volume/chapter/group)
+		// Try exact match first (volume/chapter/group/language)
 		let release = await ReleaseLookup.findReleasesForChapter(
 			seriesId,
 			chapter.chapterVolume,
 			chapter.chapterNumber,
+			chapter.language,
 			groupNames
 		);
 
@@ -340,7 +354,8 @@ export const ReleaseLookup = {
 			const fallbackResult = await CHAPTER_TITLE_EXPORT_RESOLVER.getChapterInfoByChapterAndGroups(
 				seriesId,
 				chapter.chapterNumber,
-				groupNames
+				groupNames,
+				chapter.language
 			);
 
 			if (fallbackResult) {
@@ -569,7 +584,8 @@ export const TitleResolver = {
 				const fallbackResult = await CHAPTER_TITLE_EXPORT_RESOLVER.getChapterInfoByChapterAndGroups(
 					seriesId,
 					chapter.chapterNumber,
-					assignedGroupNames
+					assignedGroupNames,
+					chapter.language
 				);
 
 				if (fallbackResult) {

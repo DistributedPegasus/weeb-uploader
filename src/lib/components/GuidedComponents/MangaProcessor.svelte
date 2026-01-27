@@ -597,7 +597,8 @@
 				chapterNumber: chapter.chapterNumber,
 				originalFolderPath: chapter.originalFolderPath,
 				groupIds: chapter.associatedGroup.groupIds ?? [],
-				currentTitle: normalizedTitle
+				currentTitle: normalizedTitle,
+				language: chapter.language
 			};
 		});
 

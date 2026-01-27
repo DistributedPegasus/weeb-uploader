@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { TargetingState, targetingStateContext, searchGroups } from './TargetingState.svelte';
 	import { ScanGroup } from '$lib/core/UploadingState.svelte';
 	import { CHAPTER_TITLE_EXPORT_RESOLVER } from '$lib/core/ChapterTitleExportResolver.svelte';
@@ -32,6 +32,7 @@
 	let lookupState = $state<LookupState>(LookupState.IDLE);
 	let groupCount = $state<number>(0);
 	let chapterCount = $state<number>(0);
+	let chapterCountByLanguage = $state<SvelteMap<string, number>>(new SvelteMap());
 	let error = $state<string | null>(null);
 	let addedGroupsCount = $state<number>(0);
 	let failedGroups = $state<string[]>([]);
@@ -56,6 +57,7 @@
 				lookupState = LookupState.IDLE;
 				groupCount = 0;
 				chapterCount = 0;
+				chapterCountByLanguage = new SvelteMap();
 				error = null;
 				addedGroupsCount = 0;
 				failedGroups = [];
@@ -87,6 +89,7 @@
 		error = null;
 		groupCount = 0;
 		chapterCount = 0;
+		chapterCountByLanguage = new SvelteMap();
 		addedGroupsCount = 0;
 		failedGroups = [];
 		appliedGroupsCount = 0;
@@ -115,13 +118,21 @@
 				// Get all unique group names for this series
 				const groupNames = await CHAPTER_TITLE_EXPORT_RESOLVER.getAllGroupNames(currentSeriesId);
 
-				// Get unique volume/chapter combinations to count total chapters
+				// Get unique volume/chapter combinations to count total chapters (without language filter to get all)
 				const volumeChapterCombinations =
 					await CHAPTER_TITLE_EXPORT_RESOLVER.getUniqueVolumeChapterCombinations(currentSeriesId);
+
+				// Count chapters by language
+				const languageCounts = new SvelteMap<string, number>();
+				for (const combination of volumeChapterCombinations) {
+					const lang = combination.language;
+					languageCounts.set(lang, (languageCounts.get(lang) || 0) + 1);
+				}
 
 				lookupState = LookupState.LOADED;
 				groupCount = groupNames.length;
 				chapterCount = volumeChapterCombinations.length;
+				chapterCountByLanguage = languageCounts;
 
 				// Clear existing available groups since we have dump data
 				targetingState.availableScanGroups = [];
@@ -230,7 +241,9 @@
 			const chapterInputs: ChapterInput[] = targetingState.chapterStates.map((chapter) => {
 				// Normalize empty strings to null for title (defensive, should already be normalized)
 				const normalizedTitle =
-					chapter.chapterTitle === undefined || chapter.chapterTitle === null || chapter.chapterTitle === ''
+					chapter.chapterTitle === undefined ||
+					chapter.chapterTitle === null ||
+					chapter.chapterTitle === ''
 						? null
 						: chapter.chapterTitle;
 				return {
@@ -238,7 +251,8 @@
 					chapterNumber: chapter.chapterNumber,
 					originalFolderPath: chapter.originalFolderPath,
 					groupIds: chapter.associatedGroup.groupIds ?? [],
-					currentTitle: normalizedTitle
+					currentTitle: normalizedTitle,
+					language: chapter.language
 				};
 			});
 
@@ -338,6 +352,12 @@
 				Found {groupCount}
 				{groupCount === 1 ? 'group' : 'groups'} and {chapterCount}
 				{chapterCount === 1 ? 'chapter' : 'chapters'} in chapter dump.
+				{#if chapterCountByLanguage.size > 0}
+					({Array.from(chapterCountByLanguage.entries())
+						.sort((a, b) => a[0].localeCompare(b[0]))
+						.map(([lang, count]) => `${count} ${lang}`)
+						.join(', ')})
+				{/if}
 			</p>
 			{#if addedGroupsCount > 0}
 				<p class="text-sm text-green-500 dark:text-green-400">

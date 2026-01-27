@@ -403,7 +403,8 @@
 					chapterNumber: chapter.chapter,
 					originalFolderPath: null, // ChapterEditor doesn't use folder paths
 					groupIds: currentGroupIds,
-					currentTitle: normalizedTitle
+					currentTitle: normalizedTitle,
+					language: chapter.language
 				};
 
 				// Use ReleaseLookup to find the chapter release (supports partial group matching)
@@ -502,6 +503,7 @@
 				const volumeRaw = editableChapter.modified.volume ?? chapter.volume ?? null;
 				const volume = volumeRaw === '' ? null : (volumeRaw ?? null);
 				const chapterNum = chapter.chapter;
+				const language = editableChapter.modified.language ?? chapter.language;
 
 				// Try to find a unique release by vol/ch (ignoring groups)
 				let release: ResolvedChapterInfo | null = null;
@@ -512,7 +514,8 @@
 					release = await CHAPTER_TITLE_EXPORT_RESOLVER.getUniqueChapterInfo(
 						editorState.seriesId,
 						volume,
-						chapterNum
+						chapterNum,
+						language
 					);
 				}
 
@@ -521,7 +524,8 @@
 					const chapterOnlyResult =
 						await CHAPTER_TITLE_EXPORT_RESOLVER.getUniqueChapterInfoByChapter(
 							editorState.seriesId,
-							chapterNum
+							chapterNum,
+							language
 						);
 					if (chapterOnlyResult) {
 						release = chapterOnlyResult.info;
@@ -612,7 +616,8 @@
 					chapterNumber: chapter.chapter,
 					originalFolderPath: null, // ChapterEditor doesn't use folder paths
 					groupIds: assignedGroupIds,
-					currentTitle: normalizedTitle
+					currentTitle: normalizedTitle,
+					language: chapter.language
 				};
 
 				chapterInputs.push(chapterInput);

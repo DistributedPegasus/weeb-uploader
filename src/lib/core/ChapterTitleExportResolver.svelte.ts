@@ -12,6 +12,7 @@ export interface ChapterInfo {
 	chapter: string;
 	title: string;
 	groups: Group[];
+	language: string;
 }
 
 export interface ResolvedChapterInfo {
@@ -46,7 +47,7 @@ export class ChapterTitleExportResolver {
 		});
 
 		try {
-			const url = asset('/chapter_export.csv');
+			const url = asset('/chapter_dump.csv');
 			const response = await fetch(url);
 			if (!response.ok) {
 				throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`);
@@ -87,17 +88,19 @@ export class ChapterTitleExportResolver {
 			volume: string;
 			chapter: string;
 			title: string;
-			weebdex_id: string;
+			wd_manga_id: string;
+			translated_language: string;
 			group_names: string | null;
-			group_alt_names: string | null;
+			group_name_alts: string | null;
 		}>;
 
 		const dataMap = new SvelteMap<string, SvelteMap<string, ChapterInfo[]>>();
 
 		for (const record of records) {
-			const seriesId = record.weebdex_id;
+			const seriesId = record.wd_manga_id;
 			const volume = record.volume || '';
 			const chapter = record.chapter || '';
+			const language = record.translated_language || 'en';
 			const key = `${volume}|${chapter}`;
 
 			// Parse group_names JSON array
@@ -119,15 +122,15 @@ export class ChapterTitleExportResolver {
 				}
 			}
 
-			// Parse group_alt_names JSON array of arrays
+			// Parse group_name_alts JSON array of arrays
 			let groupAltNames: Array<Array<{ [lang: string]: string }>> = [];
 			if (
-				record.group_alt_names != null &&
-				record.group_alt_names.trim() !== '' &&
-				record.group_alt_names !== '[]'
+				record.group_name_alts != null &&
+				record.group_name_alts.trim() !== '' &&
+				record.group_name_alts !== '[]'
 			) {
 				try {
-					const parsed = JSON.parse(record.group_alt_names);
+					const parsed = JSON.parse(record.group_name_alts);
 					if (Array.isArray(parsed)) {
 						groupAltNames = parsed.map((altNameEntry) => {
 							if (Array.isArray(altNameEntry)) {
@@ -146,7 +149,7 @@ export class ChapterTitleExportResolver {
 						});
 					}
 				} catch (error) {
-					console.warn(`Failed to parse group_alt_names for ${seriesId}:`, error);
+					console.warn(`Failed to parse group_name_alts for ${seriesId}:`, error);
 				}
 			}
 
@@ -184,7 +187,8 @@ export class ChapterTitleExportResolver {
 				volume,
 				chapter,
 				title: record.title || '',
-				groups
+				groups,
+				language
 			};
 
 			if (!dataMap.has(seriesId)) {
@@ -205,7 +209,8 @@ export class ChapterTitleExportResolver {
 	async getChapterInfo(
 		seriesId: string,
 		volume: string | null,
-		chapter: string | null
+		chapter: string | null,
+		language: string
 	): Promise<ResolvedChapterInfo | null> {
 		await this.ensureLoaded();
 
@@ -228,6 +233,7 @@ export class ChapterTitleExportResolver {
 			seriesId,
 			volume,
 			chapter,
+			language,
 			volumeStr,
 			chapterStr,
 			key,
@@ -241,13 +247,22 @@ export class ChapterTitleExportResolver {
 			return null;
 		}
 
+		// Filter by language
+		const languageFilteredInfos = chapterInfos.filter((ci) => ci.language === language);
+		if (languageFilteredInfos.length === 0) {
+			console.log('[getChapterInfo] No chapter info found for language:', language);
+			return null;
+		}
+
 		console.log('[getChapterInfo] Found chapter info:', {
-			count: chapterInfos.length,
+			count: languageFilteredInfos.length,
+			language,
 			firstChapter: {
-				volume: chapterInfos[0].volume,
-				chapter: chapterInfos[0].chapter,
-				title: chapterInfos[0].title,
-				groups: chapterInfos[0].groups.map((g) => ({
+				volume: languageFilteredInfos[0].volume,
+				chapter: languageFilteredInfos[0].chapter,
+				title: languageFilteredInfos[0].title,
+				language: languageFilteredInfos[0].language,
+				groups: languageFilteredInfos[0].groups.map((g) => ({
 					primaryName: g.primaryName,
 					altNames: g.altNames
 				}))
@@ -256,7 +271,7 @@ export class ChapterTitleExportResolver {
 
 		// Return the first release (don't merge multiple releases)
 		// If you need to match by groups, use getChapterInfoByGroups instead
-		const chapterInfo = chapterInfos[0];
+		const chapterInfo = languageFilteredInfos[0];
 
 		// Build group to title mapping
 		// groupTitles maps primary names to titles (not alt names)
@@ -294,12 +309,14 @@ export class ChapterTitleExportResolver {
 	 * @param seriesId - The series ID
 	 * @param chapter - The chapter number (can be null)
 	 * @param groupNames - Array of group names to match against
+	 * @param language - The language to match (required)
 	 * @returns The matching ResolvedChapterInfo with volume, or null if not found
 	 */
 	async getChapterInfoByChapterAndGroups(
 		seriesId: string,
 		chapter: string | null,
-		groupNames: string[]
+		groupNames: string[],
+		language: string
 	): Promise<{ volume: string; info: ResolvedChapterInfo } | null> {
 		await this.ensureLoaded();
 
@@ -321,6 +338,7 @@ export class ChapterTitleExportResolver {
 			chapter,
 			chapterStr,
 			groupNames,
+			language,
 			totalEntries: seriesMap.size
 		});
 
@@ -333,15 +351,22 @@ export class ChapterTitleExportResolver {
 				continue;
 			}
 
+			// Filter by language first
+			const languageFilteredInfos = chapterInfos.filter((ci) => ci.language === language);
+			if (languageFilteredInfos.length === 0) {
+				continue;
+			}
+
 			console.log('[getChapterInfoByChapterAndGroups] Found matching chapter number:', {
 				key,
 				volume,
 				chapterNum,
-				chapterInfosCount: chapterInfos.length
+				language,
+				chapterInfosCount: languageFilteredInfos.length
 			});
 
-			// Search through all chapters with this vol/ch combination
-			for (const chapterInfo of chapterInfos) {
+			// Search through all chapters with this vol/ch combination and language
+			for (const chapterInfo of languageFilteredInfos) {
 				console.log('[getChapterInfoByChapterAndGroups] Checking chapter info:', {
 					volume,
 					chapter: chapterNum,
@@ -447,12 +472,14 @@ export class ChapterTitleExportResolver {
 	 * @param seriesId - The series ID
 	 * @param volume - The volume number (can be null)
 	 * @param chapter - The chapter number (can be null)
+	 * @param language - The language to match (required)
 	 * @returns ResolvedChapterInfo if exactly one release exists, null otherwise
 	 */
 	async getUniqueChapterInfo(
 		seriesId: string,
 		volume: string | null,
-		chapter: string | null
+		chapter: string | null,
+		language: string
 	): Promise<ResolvedChapterInfo | null> {
 		await this.ensureLoaded();
 
@@ -474,12 +501,18 @@ export class ChapterTitleExportResolver {
 			return null;
 		}
 
-		// Only return if there's exactly one unique release
-		if (chapterInfos.length !== 1) {
+		// Filter by language
+		const languageFilteredInfos = chapterInfos.filter((ci) => ci.language === language);
+		if (languageFilteredInfos.length === 0) {
 			return null;
 		}
 
-		const chapterInfo = chapterInfos[0];
+		// Only return if there's exactly one unique release
+		if (languageFilteredInfos.length !== 1) {
+			return null;
+		}
+
+		const chapterInfo = languageFilteredInfos[0];
 
 		// Build group to title mapping
 		const groupTitles: Record<string, string | null> = {};
@@ -510,11 +543,13 @@ export class ChapterTitleExportResolver {
 	 * This is used for "fix missing groups" functionality as a fallback when vol/ch match fails.
 	 * @param seriesId - The series ID
 	 * @param chapter - The chapter number (can be null)
+	 * @param language - The language to match (required)
 	 * @returns The matching ResolvedChapterInfo with volume, or null if not found or not unique
 	 */
 	async getUniqueChapterInfoByChapter(
 		seriesId: string,
-		chapter: string | null
+		chapter: string | null,
+		language: string
 	): Promise<{ volume: string; info: ResolvedChapterInfo } | null> {
 		await this.ensureLoaded();
 
@@ -531,14 +566,17 @@ export class ChapterTitleExportResolver {
 			return null;
 		}
 
-		// Find all chapters with this chapter number (ignoring volume)
+		// Find all chapters with this chapter number (ignoring volume) and matching language
 		const matchingChapters: Array<{ volume: string; info: ChapterInfo }> = [];
 
 		for (const [key, chapterInfos] of seriesMap.entries()) {
 			const [volume, chapterNum] = key.split('|');
 			if (chapterNum === chapter) {
 				for (const chapterInfo of chapterInfos) {
-					matchingChapters.push({ volume, info: chapterInfo });
+					// Filter by language
+					if (chapterInfo.language === language) {
+						matchingChapters.push({ volume, info: chapterInfo });
+					}
 				}
 			}
 		}
@@ -643,13 +681,15 @@ export class ChapterTitleExportResolver {
 	 * @param volume - The volume (can be null)
 	 * @param chapter - The chapter (can be null)
 	 * @param groupNames - Array of group names to match against (can be API group names or CSV group names)
+	 * @param language - The language to match (required)
 	 * @returns ResolvedChapterInfo if a match is found, null otherwise
 	 */
 	async getChapterInfoByGroups(
 		seriesId: string,
 		volume: string | null,
 		chapter: string | null,
-		groupNames: string[]
+		groupNames: string[],
+		language: string
 	): Promise<ResolvedChapterInfo | null> {
 		await this.ensureLoaded();
 
@@ -672,6 +712,7 @@ export class ChapterTitleExportResolver {
 			seriesId,
 			volume,
 			chapter,
+			language,
 			volumeStr,
 			chapterStr,
 			key,
@@ -684,12 +725,21 @@ export class ChapterTitleExportResolver {
 			return null;
 		}
 
+		// Filter by language first
+		const languageFilteredInfos = chapterInfos.filter((ci) => ci.language === language);
+		if (languageFilteredInfos.length === 0) {
+			console.log('[getChapterInfoByGroups] No chapter info found for language:', language);
+			return null;
+		}
+
 		console.log('[getChapterInfoByGroups] Found chapter infos:', {
-			count: chapterInfos.length,
-			allChapters: chapterInfos.map((ci) => ({
+			count: languageFilteredInfos.length,
+			language,
+			allChapters: languageFilteredInfos.map((ci) => ({
 				volume: ci.volume,
 				chapter: ci.chapter,
 				title: ci.title,
+				language: ci.language,
 				groups: ci.groups.map((g) => ({
 					primaryName: g.primaryName,
 					altNames: g.altNames
@@ -700,7 +750,7 @@ export class ChapterTitleExportResolver {
 		// Find the chapter that matches the provided groups
 		let matchingChapterInfo: ChapterInfo | null = null;
 
-		for (const chapterInfo of chapterInfos) {
+		for (const chapterInfo of languageFilteredInfos) {
 			console.log('[getChapterInfoByGroups] Checking chapter info:', {
 				title: chapterInfo.title,
 				chapterGroups: chapterInfo.groups.map((g) => ({
@@ -775,8 +825,11 @@ export class ChapterTitleExportResolver {
 	}
 
 	async getUniqueVolumeChapterCombinations(
-		seriesId: string
-	): Promise<Array<{ volume: string; chapter: string; info: ResolvedChapterInfo }>> {
+		seriesId: string,
+		language?: string
+	): Promise<
+		Array<{ volume: string; chapter: string; language: string; info: ResolvedChapterInfo }>
+	> {
 		await this.ensureLoaded();
 
 		if (this.data === null) {
@@ -789,13 +842,23 @@ export class ChapterTitleExportResolver {
 		}
 
 		// Convert each chapter to the resolved format
-		const combinations: Array<{ volume: string; chapter: string; info: ResolvedChapterInfo }> = [];
+		const combinations: Array<{
+			volume: string;
+			chapter: string;
+			language: string;
+			info: ResolvedChapterInfo;
+		}> = [];
 
 		for (const [key, chapterInfos] of seriesMap.entries()) {
 			const [volume, chapter] = key.split('|');
 
+			// Filter by language if provided
+			const filteredInfos = language
+				? chapterInfos.filter((ci) => ci.language === language)
+				: chapterInfos;
+
 			// Process each chapter with this vol/ch combination separately
-			for (const chapterInfo of chapterInfos) {
+			for (const chapterInfo of filteredInfos) {
 				// Build group to title mapping
 				// groupTitles maps primary names to titles (not alt names)
 				const groupTitles: Record<string, string | null> = {};
@@ -826,7 +889,7 @@ export class ChapterTitleExportResolver {
 					ungroupedTitles
 				};
 
-				combinations.push({ volume, chapter, info: resolvedInfo });
+				combinations.push({ volume, chapter, language: chapterInfo.language, info: resolvedInfo });
 			}
 		}
 
